@@ -18,9 +18,6 @@
 #define mass_jupiter 9.5e-4
 #define mass_spaceship 5e-28 // mass of a 1000 kg spaceship
 
-//LJ parameters
-#define epsilon 1.0
-#define sigma 1.0
 
 
 typedef struct {
@@ -79,7 +76,44 @@ double F3(double f3){
 
 
 //---------------------------------------------------------------------------
+point2D calcForces(point2D *r, point2D *v, double t){
+    point2D r_CA,r_CB,r_BA;//vectors
+    double RCA,RCB,RBA;//magnitues
+    point2D uRCA,uRCB,uRBA;
+    double FA,FB,FC;
+    FA=FB=FC=0.0;
 
+    //relative position vectors (3)x2 = 6
+    r_CA.x = r[2].x - r[0].x;
+    r_CA.y = r[2].y - r[0].y;
+    r_CB.x = r[2].x - r[1].x;
+    r_CB.y = r[2].y - r[1].y;
+    r_BA.x = r[1].x - r[0].x;
+    r_BA.y = r[1].y - r[0].y;
+
+    //magnitudes
+    RCA = sqrt(r_CA.x*r_CA.x + r_CA.y*r_CA.y);
+    RCB = sqrt(r_CB.x*r_CB.x + r_CB.y*r_CB.y);
+    RBA = sqrt(r_BA.x*r_BA.x + r_BA.y*r_BA.y);
+
+    //unit vector calculations
+    uRCA.x = r_CA.x / RCA; 
+    uRCA.y = r_CA.y / RCA;
+    uRCB.x = r_CB.x / RCB; 
+    uRCB.y = r_CB.y / RCB;
+    uRBA.x = r_BA.x / RBA; 
+    uRBA.y = r_BA.y / RBA;
+
+
+    //F_A
+    
+    //F_B
+
+    //F_C
+
+
+    return *f;
+}
 
 //---------------------------------------------------------------------------
 
@@ -115,8 +149,13 @@ int main() {
         h = 2;
         //time step
         //TODO: 1. Calculate Forces
+        for(int i = 0;i < dimesions;i++){
+            f[i].x = calcForces(t).x;
+        }
         //TODO: 2. Update Momentum
+
         //TODO: 3. Update Position
+       
         //TODO: 4. Write out time, pos 1, pos 2, pos 3
 
 	}
