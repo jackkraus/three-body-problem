@@ -93,8 +93,9 @@ void init(double *r, double *v, double *m, double *u,int num_bodies){
 //---------------------------------------------------------------------------
 //calculate the derivative 
 
-vector<double> derivative() {
-    vector<double> du(initialConditions.bodies * 4);
+double* derivative() {
+    double du;
+    du = new double[num_bodies * 4];
 
     // Loop through the bodies
     for (int iBody = 0; iBody < initialConditions.bodies; iBody++) {
@@ -190,6 +191,7 @@ int main() {
         h = 2;
         //time step
         //TODO: 1. Calculate Forces
+        acceleration();
         //TODO: 2. Update Momentum
         //TODO: 3. Update Position
         //TODO: 4. Write out time, pos 1, pos 2, pos 3
