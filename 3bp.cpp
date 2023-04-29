@@ -21,39 +21,20 @@
 
 using namespace std;
 
-//---------------------------------------------------------------------------
+// don't really need this one since we'll eventually have the state structure
+typedef struct {
+	double x,y; //position x,y  
+} point2D;
 
-class RungeKutta {
-public:
-    static void calculate(double h, vector<double>& u, vector<double> (*derivative)()) {
-        double a[4] = {h/2, h/2, h, 0};
-        double b[4] = {h/6, h/3, h/3, h/6};
-        vector<double> u0(u.size()), ut(u.size());
-        int dimension = u.size();
+typedef struct {
+	double x,y; //position x,y 
+    double mass; //mass 
+} state;
 
-        for (int i = 0; i < dimension; i++) {
-            u0[i] = u[i];
-            ut[i] = 0;
-        }
-
-        for (int j = 0; j < 4; j++) {
-            vector<double> du = derivative();
-
-            for (int i = 0; i < dimension; i++) {
-                u[i] = u0[i] + a[j]*du[i];
-                ut[i] = ut[i] + b[j]*du[i];
-            }
-        }
-
-        for (int i = 0; i < dimension; i++) {
-            u[i] = u0[i] + ut[i];
-        }
-    }
-};
 
 //---------------------------------------------------------------------------
 
-void init(double *r, double *v, double *m, double *u,int num_bodies){
+void init(double *r, double *v, double *m, double *u){
     // Define initial positions and velocities
 
     //Earth
@@ -89,6 +70,44 @@ void init(double *r, double *v, double *m, double *u,int num_bodies){
     printf("Sun: r:(%f,%f) v:(%f,%f)\n", r[2].x,r[2].y,v[2].x,v[2].y);
 }
 
+//---------------------------------------------------------------------------
+
+void updatePosition(timestep, double *u){
+    calculate(timestep, u,derivative);
+}
+
+//---------------------------------------------------------------------------
+
+//RK4 to update position and velocity all at once
+static void calculate(double h, double *u) {
+    double a[4] = {h/2, h/2, h, 0}; // for RK4
+    double b[4] = {h/6, h/3, h/3, h/6}; // for RK4
+    double *u0, *ut;
+    
+    u0 = new double[u.size()];
+    ut = new double[u.size()];
+
+    int dimensionOfArray = u.size();
+
+    for (int i = 0; i < dimensionOfArray; i++) {
+        u0[i] = u[i]; // keep our initial value the same
+        ut[i] = 0; // we want to reset and previously existing value here
+    }
+
+    for (int j = 0; j < 4; j++) { // over the number of steps for RK4
+        double *du = new double[u.size()];
+        du = derivative(); //need the derivatives for both position and velocity
+        for (int i = 0; i < dimensionOfArray; i++) { // goes to 4*numBodies = (12 for 3 bodies, 16 for 4 bodies)
+            u[i] = u0[i] + a[j]*du[i]; // initial value
+            ut[i] = ut[i] + b[j]*du[i]; // time stepped value
+        }
+    }
+
+    for (int i = 0; i < dimensionOfArray; i++) {
+        u[i] = u0[i] + ut[i];
+    }
+}
+//  calls derivative()
 
 //---------------------------------------------------------------------------
 //calculate the derivative 
@@ -98,16 +117,14 @@ double* derivative() {
     du = new double[num_bodies * 4];
 
     // Loop through the bodies
-    for (int iBody = 0; iBody < initialConditions.bodies; iBody++) {
+    for (int iBody = 0; iBody < num_bodies; iBody++) {
         // Starting index for current body in the u array
         int bodyStart = iBody * 4;
-
-        du[bodyStart + 0] = state.u[bodyStart + 0 + 2]; // Velocity x
-        du[bodyStart + 1] = state.u[bodyStart + 0 + 3]; // Velocity y
+        du[bodyStart + 0] = u[bodyStart + 2]; // dr_(bodyStart)_x = v_(bodyStart)_x 
+        du[bodyStart + 1] = u[bodyStart + 3]; // dr_(bodyStart)_y = v_(bodyStart)_y
         du[bodyStart + 2] = acceleration(iBody, 0); // Acceleration x
         du[bodyStart + 3] = acceleration(iBody, 1); // Acceleration y
     }
-
     return du;
 }
 
@@ -121,13 +138,14 @@ double* derivative() {
 //   iFromBody: the index of body. 0 is first body, 1 is second body.
 //   coordinate: 0 for x coordinate, 1 for y coordinate
 
+//acceleration for each component, is called a total: 6 times for 3 bodies
 double acceleration(int from, int coord,double *u, double *m){
-  double result = 0.0;
-  int iFrom = from * 4; //time 4 because the index of the pos/velocity array holds 4 values per body
-  double distX, distY, dist, overDist3;
+    double result = 0.0;
+    int iFrom = from * 4; //time 4 because the index of the pos/velocity array holds 4 values per body
+    double distX, distY, dist, overDist3;
 
-  //loop through the bodies
-  for(int iTo = 0; iTo < num_bodies; iTo++){ //iterates through all of the bodies
+    //loop through the bodies
+    for(int iTo = 0; iTo < num_bodies; iTo++){ //iterates through all of the bodies
     if(iFrom == iTo) { continue; } // iterates the next body
     int iTo = i * 4;
     // Distance between the two bodies
@@ -135,27 +153,10 @@ double acceleration(int from, int coord,double *u, double *m){
     distY = u[iTo + 1] - u[iFrom + 1]; //separation of each object in Y
     dist = sqrt(distX*distX + distY*distY); //calculate the total distance between the two objects
     overDist3 = 1/(dist*dist*dist); // 1/distance^3
-    result += G*m[iTo](u[iTo + coord] - u[iFrom - coord])*overDist3; //the net force
-  }
-  return result;
+    result += G*m[iTo]*(u[iTo + coord] - u[iFrom - coord])*overDist3; //the net force
+    }
+    return result;
 }
-
-
-
-//---------------------------------------------------------------------------
-
-void updatePosition(timestep){
-  RungeKutta::calculate(timestep, u,derivative);
-}
-
-void calculateNewPosition() {
-  //loop through the bodies
-  for(int i = 0; i < num_bodies; i++){
-    int start = i * 4;
-
-  }
-}
-
 
 //---------------------------------------------------------------------------
 
@@ -176,26 +177,27 @@ int main() {
     double t;
     double x,y;
 
-    point2D *r,*v,*f;
+    point2D *r,*v;
     
-    r=new double[num_bodies];
-    v=new double[num_bodies];
-    m=new double[num_bodies];
-    u=new double[4*num_bodies];
+    r=new point2D[num_bodies];
+    v=new point2D[num_bodies];
+    u=new state[4*num_bodies];
 
 
-    init(r,v,m,u,num_bodies);
+    init(r,v,m,u);
 
 	for(n=0;n<Nt;n++) {
         t=n*ht;
         h = 2;
         //time step
         //TODO: 1. Calculate Forces
-        acceleration();
-        //TODO: 2. Update Momentum
-        //TODO: 3. Update Position
-        //TODO: 4. Write out time, pos 1, pos 2, pos 3
+        // acceleration();
 
+        //TODO: 2. Update Momentum
+        
+        //TODO: 3. Update Position
+        
+        //TODO: 4. Write out time, pos 1, pos 2, pos 3
 	}
 
     //graph the Temp. vs Temp Graph
