@@ -86,9 +86,9 @@ void init(point2D *r, point2D *v, double *m, double *u){
 //calculate the acceleration
 
 //acceleration for each component, is called a total: 6 times for 3 bodies
-double acceleration(int iFromBody, int coord, double *u, double *m){
+double acceleration(int fromBody, int coord, double *u, double *m){
     double result = 0.0;
-    int iFromBodyStart = iFromBody * 4; //time 4 because the index of the pos/velocity array holds 4 values per body
+    int fromBodyStart = fromBody * 4; //time 4 because the index of the pos/velocity array holds 4 values per body
     double distX, distY, dist, overDist3;
 
     double G = 6.673e-11;
@@ -96,12 +96,12 @@ double acceleration(int iFromBody, int coord, double *u, double *m){
 
     //loop through the bodies
     for(int iToBody = 0; iToBody < num_bodies; iToBody++){ //iterates through all of the bodies
-        if(iFromBody == iToBody) { continue; } // is the same, iterate to the next body
+        if(fromBody == iToBody) { continue; } // is the same, iterate to the next body
         int iToBodyStart = iToBody * 4;
 
         // Distance between the two bodies
-        distX = u[iToBodyStart + 0] - u[iFromBodyStart + 0]; //separation of each object in X
-        distY = u[iToBodyStart + 1] - u[iFromBodyStart + 1]; //separation of each object in Y
+        distX = u[iToBodyStart + 0] - u[fromBodyStart + 0]; //separation of each object in X
+        distY = u[iToBodyStart + 1] - u[fromBodyStart + 1]; //separation of each object in Y
         
         dist = sqrt(distX*distX + distY*distY); //calculate the total distance between the two objects
         
@@ -111,7 +111,7 @@ double acceleration(int iFromBody, int coord, double *u, double *m){
         overDist3 = 1/(dist*dist*dist); // 1/distance^3
         // printf("overDist3 = %.50f\n",overDist3);
 
-        result += G*m[iToBody]*(u[iToBodyStart + coord] - u[iFromBodyStart + coord])*overDist3; //the net force
+        result += G*m[iToBody]*(u[iToBodyStart + coord] - u[fromBodyStart + coord])*overDist3; //the net force
     }
 
     // printf("acceleration = %f\n",result);
@@ -165,7 +165,7 @@ static void calculate(double h, double *u, double *m) {
 
     for (int j = 0; j < 4; j++) { // over the number of steps for RK4
 
-        //PROBLEM:
+        //PROBLEM
         double *du = derivative(u,m); // need the derivatives for both position and velocity
     
     
@@ -189,11 +189,11 @@ static void calculate(double h, double *u, double *m) {
 int main() {
     //initial variables
     int N = num_bodies;
-	int Nt=5000;
+	int Nt=10000000;
     double ht=0.1;
 
     fHandle f;
-    f = FileCreate("3bp.tsv");
+    f = FileCreate("3bp.txt");
 
     gnuplot *gp=new gnuplot();
 
@@ -225,9 +225,12 @@ int main() {
 	}
     FileClose(f);
 
-    //graph the Temp. vs Temp Graph
-    // gp->plotfile("temperature.txt","u 1:2 w l t 'Temp'");
-    // gp->show();
+    //graph the posX vs posY Graph
+    gp->plotfile("3bp.txt","u 2:3 w l t 'Earth'");
+    gp->replotfile("3bp.txt","u 4:5 w l t 'Moon'");
+    gp->replotfile("3bp.tsv","u 6:7 w l t 'Sun'");
+    gp->addcommand("reset");
+    gp->show();
     // gp->addcommand("reset");
     //graph the Temp. vs Temp Graph
     // gp->plotfile("density.txt","u 1:2 w l t 'Density'");
@@ -235,7 +238,7 @@ int main() {
     // gp->addcommand("reset");
 
 
-    // delete gp;
+    delete gp;
     //create movie from png images created by gnuplot
     // system("ffmpeg -y -i OUT/MD_%06d.png OUT/MD.m4v");
 	
