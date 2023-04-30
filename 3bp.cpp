@@ -5,18 +5,17 @@
 #include "fileutils.h"
 #include "stringutils.h"
 #include "gnuplot.h"
-
-#define g0 9.8067 //default gravity
 // #define G = 6.673e-11 // Gravitational Constant
 
 #define eps 1e-8
 
-#define mass_M87 6.5e9 // solar mass of Messier 87
-#define mass_sun 1
-#define mass_earth 3e-6
-#define mass_moon 3.69e-8
-#define mass_jupiter 9.5e-4
-#define mass_spaceship 5e-28 // mass of a 1000 kg spaceship
+// #define mass_M87  // solar mass of Messier 87
+#define mass_sun 1.98855e30
+#define mass_earth 5.972e24
+#define mass_moon 7.347e22 
+#define mass_jupiter 1.898e28
+#define mass_spaceship 1e4 // mass of a 1000 kg spaceship
+
 #define num_bodies 3
 
 using namespace std;
@@ -61,21 +60,25 @@ void init(point2D *r, point2D *v, double *m, double *u){
     //instead of using two arrays for position and velocity, define one array for both.
     // u = {r[0].x,r[0].y,v[0].x,v[0].y,r[1].x,r[1].y,v[1].x,v[1].y,r[2].x,r[2].y,v[2].x,v[2].y};
     for(int i = 0; i < num_bodies; i++){
-        u[i] = (double) r[i].x;
-        u[i+1] = (double) r[i].y;
-        u[i+2] = (double) v[i].x;
-        u[i+3] = (double) v[i].y;
+        u[4*i] =  r[i].x;
+        u[(4*i)+1] = r[i].y;
+        u[(4*i)+2] = v[i].x;
+        u[(4*i)+3] = v[i].y;
     }
-
+    
+    // for(int i = 0; i < 12; i++){
+    //     printf("%f \t",u[i]);
+    // }
+    // printf("\n");
 
     // Print the initial conditions
-    printf("Initial positions and velocities:\n");
-    printf("Earth: r:(%f,%f) v:(%f,%f)\n", r[0].x,r[0].y,v[0].x,v[0].y);
-    printf("Moon: r:(%f,%f) v:(%f,%f)\n",r[1].x,r[1].y,v[1].x,v[1].y);
-    printf("Sun: r:(%f,%f) v:(%f,%f)\n", r[2].x,r[2].y,v[2].x,v[2].y);
+    // printf("Initial positions and velocities:\n");
+    // printf("Earth: r:(%f,%f) v:(%f,%f)\n", r[0].x,r[0].y,v[0].x,v[0].y);
+    // printf("Moon: r:(%f,%f) v:(%f,%f)\n",r[1].x,r[1].y,v[1].x,v[1].y);
+    // printf("Sun: r:(%f,%f) v:(%f,%f)\n", r[2].x,r[2].y,v[2].x,v[2].y);
 
-    printf("Masses\n");
-    printf("Earth: %.12f, Moon: %.12f, Sun: %.12f\n", m[0],m[1],m[2]);
+    // printf("Masses\n");
+    // printf("Earth: %.12f, Moon: %.12f, Sun: %.12f\n", m[0],m[1],m[2]);
 
 }
 
@@ -83,24 +86,35 @@ void init(point2D *r, point2D *v, double *m, double *u){
 //calculate the acceleration
 
 //acceleration for each component, is called a total: 6 times for 3 bodies
-double acceleration(int from, int coord,double *u, double *m){
+double acceleration(int iFromBody, int coord, double *u, double *m){
     double result = 0.0;
-    int iFrom = from * 4; //time 4 because the index of the pos/velocity array holds 4 values per body
+    int iFromBodyStart = iFromBody * 4; //time 4 because the index of the pos/velocity array holds 4 values per body
     double distX, distY, dist, overDist3;
 
     double G = 6.673e-11;
+    // double G = 1.0;
 
     //loop through the bodies
-    for(int iTo = 0; iTo < num_bodies; iTo++){ //iterates through all of the bodies
-        if(iFrom == iTo) { continue; } // iterates the next body
-        int iToStart = iTo * 4;
+    for(int iToBody = 0; iToBody < num_bodies; iToBody++){ //iterates through all of the bodies
+        if(iFromBody == iToBody) { continue; } // is the same, iterate to the next body
+        int iToBodyStart = iToBody * 4;
+
         // Distance between the two bodies
-        distX = u[iToStart + 0] - u[iFrom + 0]; //separation of each object in X
-        distY = u[iToStart + 1] - u[iFrom + 1]; //separation of each object in Y
+        distX = u[iToBodyStart + 0] - u[iFromBodyStart + 0]; //separation of each object in X
+        distY = u[iToBodyStart + 1] - u[iFromBodyStart + 1]; //separation of each object in Y
+        
         dist = sqrt(distX*distX + distY*distY); //calculate the total distance between the two objects
+        
+        // printf("distance = %f\n",dist);
+
+        //okay this works
         overDist3 = 1/(dist*dist*dist); // 1/distance^3
-        result += G*m[iTo]*(u[iToStart + coord] - u[iFrom + coord])*overDist3; //the net force
+        // printf("overDist3 = %.50f\n",overDist3);
+
+        result += G*m[iToBody]*(u[iToBodyStart + coord] - u[iFromBodyStart + coord])*overDist3; //the net force
     }
+
+    // printf("acceleration = %f\n",result);
     return result;
 }
 
@@ -119,8 +133,12 @@ double * derivative(double *u, double *m) {
         int bodyStart = iBody * 4;
         du[bodyStart + 0] = u[bodyStart + 2]; // dr_(bodyStart)_x = v_(bodyStart)_x 
         du[bodyStart + 1] = u[bodyStart + 3]; // dr_(bodyStart)_y = v_(bodyStart)_y
+        
+        //PROBLEM !!!!
         du[bodyStart + 2] = acceleration(iBody, 0, u, m); // Acceleration x
         du[bodyStart + 3] = acceleration(iBody, 1, u, m); // Acceleration y
+        // printf("du[bodyStart + 2] here is %f\n",du[bodyStart + 3]);
+    
     }
     return du;
 }
@@ -133,6 +151,7 @@ static void calculate(double h, double *u, double *m) {
     double b[4] = {h/6, h/3, h/3, h/6}; // for RK4
     double *u0, *ut;
     int uSize = sizeof(u);
+
     u0 = new double[uSize];
     ut = new double[uSize];
 
@@ -140,12 +159,18 @@ static void calculate(double h, double *u, double *m) {
 
     for (int i = 0; i < dimensionOfArray; i++) {
         u0[i] = u[i]; // keep our initial value the same
+        // if(i==0) printf("u[i] here is %f\n",u[i]); // FINE HERE
         ut[i] = 0.0; // we want to reset and previously existing value here
     }
 
     for (int j = 0; j < 4; j++) { // over the number of steps for RK4
-        double *du = derivative(u,m); //need the derivatives for both position and velocity
+
+        //PROBLEM:
+        double *du = derivative(u,m); // need the derivatives for both position and velocity
+    
+    
         for (int i = 0; i < dimensionOfArray; i++) { // goes to 4*numBodies = (12 for 3 bodies, 16 for 4 bodies)
+            // printf("du[i] here is %f\n",du[i]);
             u[i] = u0[i] + a[j]*du[i]; // initial value
             ut[i] = ut[i] + b[j]*du[i]; // time stepped value
         }
@@ -153,6 +178,7 @@ static void calculate(double h, double *u, double *m) {
 
     for (int i = 0; i < dimensionOfArray; i++) {
         u[i] = u0[i] + ut[i];
+        
     }
 }
 
@@ -162,9 +188,10 @@ static void calculate(double h, double *u, double *m) {
 
 int main() {
     //initial variables
+    int N = num_bodies;
 	int Nt=5000;
-    double ht=0.001;
-    
+    double ht=0.1;
+
     fHandle f;
     f = FileCreate("3bp.tsv");
 
@@ -180,14 +207,15 @@ int main() {
     
     r=new point2D[num_bodies];
     v=new point2D[num_bodies];
-    u=new double[4*num_bodies];
+    u=new double[4*N];
     m=new double[num_bodies];
 
 
-    init(r,v,m,u);
+    init(r,v,m,u); //initialize it first here
 
 	for(n=0;n<Nt;n++) {
         t=n*ht;
+        init(r,v,m,u); //reinitilize it after every single time step
         calculate(t, u, m);
         //TODO: 4. Write out time, pos 1, pos 2, pos 3
         s = FloatToStr(t)+"\t"+ FloatToStr(u[0]) + "\t"+FloatToStr(u[1]) + "\t"
