@@ -47,7 +47,7 @@ void init(point2D *r, point2D *v, double *m, double *u){
     r[1].x = 1.4709e11; //r2_x      
     r[1].y = 382500000;//r2_y     
     v[1].x = 1022.0;     //v2_x      
-    v[1].y = 0.0;  //v2_y      
+    v[1].y = 30290.0;  //v2_y      
     m[1] = mass_moon;
 
     //Sun
@@ -178,8 +178,8 @@ static void calculate(double h, double *u, double *m) {
 int main() {
     //initial variables
     int N = num_bodies;
-	int Nt=50000000;
-    double ht=0.1;
+	int Nt=100000;
+    double ht=0.01;
 
 
     fHandle f;
@@ -204,7 +204,7 @@ int main() {
 
 	for(n=0;n<Nt;n++) {
         t=n*ht;
-        init(r,v,m,u); //reinitilize it after every single time step
+        // init(r,v,m,u); //reinitilize it after every single time step
         calculate(t, u, m);
         //TODO: 4. Write out time, pos 1, pos 2, pos 3
         s = FloatToStr(t)+"\t"+ FloatToStr(u[0]) + "\t"+FloatToStr(u[1]) + "\t"
