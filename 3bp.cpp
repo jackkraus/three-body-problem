@@ -37,17 +37,17 @@ void init(point2D *r, point2D *v, double *m, double *u){
     // Define initial positions and velocities
 
     //Earth
-    r[0].x = 147.09e8;//r1_x
+    r[0].x = 1.4709e11;//r1_x
     r[0].y = 0.0;    //r1_y      
     v[0].x = 0.0;    //v1_x     
     v[0].y = 30290;  //v1_y   
     m[0] = mass_earth;
     
     //Moon
-    r[1].x = 147.1e8; //r2_x      
-    r[1].y = 0.3844e8;//r2_y     
-    v[1].x = 0.0;     //v2_x      
-    v[1].y = 1022.0;  //v2_y      
+    r[1].x = 1.4709e11; //r2_x      
+    r[1].y = 382500000;//r2_y     
+    v[1].x = 1022.0;     //v2_x      
+    v[1].y = 0.0;  //v2_y      
     m[1] = mass_moon;
 
     //Sun
@@ -57,6 +57,7 @@ void init(point2D *r, point2D *v, double *m, double *u){
     v[2].y = 0.0; //v3_y           
     m[2] = mass_sun;
 
+   
     //instead of using two arrays for position and velocity, define one array for both.
     // u = {r[0].x,r[0].y,v[0].x,v[0].y,r[1].x,r[1].y,v[1].x,v[1].y,r[2].x,r[2].y,v[2].x,v[2].y};
     for(int i = 0; i < num_bodies; i++){
@@ -65,25 +66,13 @@ void init(point2D *r, point2D *v, double *m, double *u){
         u[(4*i)+2] = v[i].x;
         u[(4*i)+3] = v[i].y;
     }
-    
-    // for(int i = 0; i < 12; i++){
-    //     printf("%f \t",u[i]);
-    // }
-    // printf("\n");
-
-    // Print the initial conditions
-    // printf("Initial positions and velocities:\n");
-    // printf("Earth: r:(%f,%f) v:(%f,%f)\n", r[0].x,r[0].y,v[0].x,v[0].y);
-    // printf("Moon: r:(%f,%f) v:(%f,%f)\n",r[1].x,r[1].y,v[1].x,v[1].y);
-    // printf("Sun: r:(%f,%f) v:(%f,%f)\n", r[2].x,r[2].y,v[2].x,v[2].y);
-
-    // printf("Masses\n");
-    // printf("Earth: %.12f, Moon: %.12f, Sun: %.12f\n", m[0],m[1],m[2]);
 
 }
 
 //---------------------------------------------------------------------------
 //calculate the acceleration
+
+//credit for this design goes to Evgenii 
 
 //acceleration for each component, is called a total: 6 times for 3 bodies
 double acceleration(int fromBody, int coord, double *u, double *m){
@@ -189,15 +178,16 @@ static void calculate(double h, double *u, double *m) {
 int main() {
     //initial variables
     int N = num_bodies;
-	int Nt=10000000;
+	int Nt=50000000;
     double ht=0.1;
+
 
     fHandle f;
     f = FileCreate("3bp.txt");
 
     gnuplot *gp=new gnuplot();
 
-    int n;
+    int n,fn;
     double t;
     double x,y;
     string s;
@@ -209,7 +199,6 @@ int main() {
     v=new point2D[num_bodies];
     u=new double[4*N];
     m=new double[num_bodies];
-
 
     init(r,v,m,u); //initialize it first here
 
@@ -226,21 +215,16 @@ int main() {
     FileClose(f);
 
     //graph the posX vs posY Graph
-    gp->plotfile("3bp.txt","u 2:3 w l t 'Earth'");
+    gp->plotfile("3bp.txt","u 6:7 w l t 'Sun'");
+    gp->replotfile("3bp.txt","u 2:3 w l t 'Earth'");
     gp->replotfile("3bp.txt","u 4:5 w l t 'Moon'");
-    gp->replotfile("3bp.tsv","u 6:7 w l t 'Sun'");
     gp->addcommand("reset");
     gp->show();
-    // gp->addcommand("reset");
-    //graph the Temp. vs Temp Graph
-    // gp->plotfile("density.txt","u 1:2 w l t 'Density'");
-    // gp->show();
-    // gp->addcommand("reset");
 
 
     delete gp;
     //create movie from png images created by gnuplot
-    // system("ffmpeg -y -i OUT/MD_%06d.png OUT/MD.m4v");
+    // system("ffmpeg -y -i OUT/3bp_%06d.png OUT/3bp.m4v");
 	
 	delete[] r;
 	delete[] v;
