@@ -37,32 +37,32 @@ void init(point2D *r, point2D *v, double *m, double *u){
     // Define initial positions and velocities
 
     //Earth
-    r[0].x = 147.09e8;//r1_x
+    r[0].x = 147.09e9;//r1_x
     r[0].y = 0.0;    //r1_y      
     v[0].x = 0.0;    //v1_x     
     v[0].y = 30290;  //v1_y   
     m[0] = mass_earth;
     
     //Moon
-    r[1].x = 147.1e8; //r2_x      
-    r[1].y = 0.3844e8;//r2_y     
-    v[1].x = 0.0;     //v2_x      
-    v[1].y = 1022.0;  //v2_y      
+    r[1].x = 147.1e9; //r2_x      
+    r[1].y = 384.4e6;//r2_y     
+    v[1].x = 1020.0;     //v2_x      
+    v[1].y = 30290.0;  //v2_y      
     m[1] = mass_moon;
 
     //Sun
     r[2].x = 0.0; //r3_x            
     r[2].y = 0.0; //r3_y     
-    v[2].x = 1000.0; //v3_x
+    v[2].x = 0.0; //v3_x
     v[2].y = 0.0; //v3_y           
     m[2] = mass_sun;
 
     //Jupiter
-    r[3].x = 5.0605e+10; //r3_x            
+    r[3].x = 778e9; //r3_x            
     r[3].y = 0.0; //r3_y     
-    v[3].x = 0.0; //v3_x
-    v[3].y = 20.0; //v3_y           
-    m[3] = mass_M87;
+    v[3].x = 20.0; //v3_x
+    v[3].y = 1306; //v3_y           
+    m[3] = mass_jupiter;
 
    
     //instead of using two arrays for position and velocity, define one array for both.
@@ -184,8 +184,8 @@ static void calculate(double h, double *u, double *m) {
 int main() {
     //initial variables
     int N = num_bodies;
-	int Nt=10000000;
-    double ht=0.5;
+	int Nt=100000;
+    double ht=0.1;
 
 
     fHandle f;
@@ -210,7 +210,7 @@ int main() {
 
 	for(n=0;n<Nt;n++) {
         t=n*ht;
-        init(r,v,m,u); //reinitilize it after every single time step
+        // init(r,v,m,u); //reinitilize it after every single time step
         calculate(t, u, m);
         //TODO: 4. Write out time, pos 1, pos 2, pos 3
         s = FloatToStr(t)+"\t"+ FloatToStr(u[0]) + "\t"+FloatToStr(u[1]) + "\t"
@@ -225,7 +225,7 @@ int main() {
     gp->plotfile("4bp.txt","u 2:3 w l t 'Earth'");
     gp->replotfile("4bp.txt","u 4:5 w l t 'Moon'");
     gp->replotfile("4bp.txt","u 6:7 w l t 'Sun'");
-    gp->replotfile("4bp.txt","u 8:9 w l t 'M87'");
+    gp->replotfile("4bp.txt","u 8:9 w l t 'Jupiter'");
     gp->addcommand("reset");
     gp->show();
 
