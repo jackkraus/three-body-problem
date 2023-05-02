@@ -179,7 +179,7 @@ int main() {
     //initial variables
     int N = num_bodies;
 	int Nt=100000;
-    double ht=0.01;
+    double ht=13;
 
 
     fHandle f;
@@ -204,7 +204,7 @@ int main() {
 
 	for(n=0;n<Nt;n++) {
         t=n*ht;
-        // init(r,v,m,u); //reinitilize it after every single time step
+        // init(r,v,m,u); //Not Needed
         calculate(t, u, m);
         //TODO: 4. Write out time, pos 1, pos 2, pos 3
         s = FloatToStr(t)+"\t"+ FloatToStr(u[0]) + "\t"+FloatToStr(u[1]) + "\t"
